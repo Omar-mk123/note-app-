@@ -1,0 +1,75 @@
+# Notes Management & Review REST API
+
+A production-oriented **RESTful Notes Management API** built with **Node.js, Express.js, MongoDB, and Mongoose**. The application provides secure user authentication, personal and public note management, note reviews, and search functionality through a clean and scalable backend architecture.
+
+## Key Features
+
+* **User Authentication & Authorization**
+
+  * User registration and login
+  * JWT-based authentication
+  * Protected API endpoints
+  * User-specific resource ownership
+
+* **Notes Management**
+
+  * Create, read, update, and delete notes
+  * Private and public note visibility
+  * Retrieve authenticated user's notes
+  * Retrieve publicly available notes
+  * Search public notes by title or content
+  * Notes sorted by creation date
+
+* **Review System**
+
+  * Add reviews to notes
+  * Retrieve reviews associated with a note
+  * Update and delete reviews
+  * User-based review ownership
+
+* **Data Relationships**
+
+  * User → Notes relationship
+  * User → Reviews relationship
+  * Note → Reviews relationship
+  * MongoDB references with Mongoose `populate()`
+
+* **API Design**
+
+  * RESTful endpoint architecture
+  * Structured JSON responses
+  * HTTP status code handling
+  * Centralized controller-based architecture
+  * Middleware-based authentication and authorization
+
+## Technology Stack
+
+**Backend:** Node.js, Express.js
+**Database:** MongoDB, Mongoose
+**Authentication:** JWT, bcrypt
+**API Testing:** Postman
+**Architecture:** REST API, MVC-style structure
+
+## Example API Endpoints
+
+```text
+POST   /api/users/register
+POST   /api/users/login
+
+POST   /api/notes
+GET    /api/notes
+GET    /api/notes/public
+GET    /api/notes/search?search=node
+GET    /api/notes/:id
+PUT    /api/notes/:id
+DELETE /api/notes/:id
+
+POST   /api/reviews/:noteId
+GET    /api/reviews/:noteId
+PUT    /api/reviews/:id
+DELETE /api/reviews/:id
+```
+
+## Project Highlights
+
+Designed with a focus on **security, maintainability, scalability, and clean API architecture**, while implementing real-world backend concepts such as authentication, authorization, database relationships, CRUD operations, resource ownership, search, reviews, and protected routes.
