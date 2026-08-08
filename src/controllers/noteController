@@ -1,0 +1,283 @@
+const Note = require("../models/Note");
+const Review = require("../models/Review");
+
+// ======================
+// Create Note
+// ======================
+const createNote = async (req, res) => {
+  try {
+    const { title, content, isPublic } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide title and content",
+      });
+    }
+
+    const note = await Note.create({
+      title,
+      content,
+      isPublic,
+      user: req.user._id,
+    });
+
+    const populatedNote = await Note.findById(note._id).populate(
+      "user",
+      "fullName email"
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Note created successfully",
+      note: populatedNote,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ======================
+// Get All Notes
+// ======================
+const getAllNotes = async (req, res) => {
+  try {
+    const notes = await Note.find({
+      user: req.user._id,
+    })
+      .populate("user", "fullName email")
+      .sort({
+        createdAt: -1,
+      });
+
+    res.status(200).json({
+      success: true,
+      count: notes.length,
+      notes,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ======================
+// Get Public Notes
+// ======================
+const getPublicNotes = async (req, res) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+
+    const skip = (page - 1) * limit;
+
+    const totalNotes = await Note.countDocuments({
+      isPublic: true,
+    });
+
+    const notes = await Note.find({
+      isPublic: true,
+    })
+      .populate("user", "fullName email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      currentPage: page,
+      totalPages: Math.ceil(totalNotes / limit),
+      totalNotes,
+      count: notes.length,
+      notes,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ======================
+// Search Notes
+// ======================
+const searchNotes = async (req, res) => {
+  try {
+    const { search } = req.query;
+
+    if (!search) {
+      return res.status(400).json({
+        success: false,
+        message: "Search keyword is required",
+      });
+    }
+
+    const notes = await Note.find({
+      isPublic: true,
+      $or: [
+        {
+          title: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          content: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ],
+    })
+      .populate("user", "fullName email")
+      .sort({
+        createdAt: -1,
+      });
+
+    res.status(200).json({
+      success: true,
+      keyword: search,
+      count: notes.length,
+      notes,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ======================
+// Get Single Note
+// ======================
+const getNoteById = async (req, res) => {
+  try {
+    const note = await Note.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    }).populate("user", "fullName email");
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    const reviews = await Review.find({
+      note: note._id,
+    })
+      .populate("user", "fullName email")
+      .sort({
+        createdAt: -1,
+      });
+
+    res.status(200).json({
+      success: true,
+      note,
+      reviews,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ======================
+// Update Note
+// ======================
+const updateNote = async (req, res) => {
+  try {
+    const { title, content } = req.body;
+
+    const note = await Note.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    note.title = title || note.title;
+    note.content = content || note.content;
+
+    await note.save();
+
+    const updatedNote = await Note.findById(note._id).populate(
+      "user",
+      "fullName email"
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Note updated successfully",
+      note: updatedNote,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ======================
+// Delete Note
+// ======================
+const deleteNote = async (req, res) => {
+  try {
+    const note = await Note.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    await Review.deleteMany({
+      note: note._id,
+    });
+
+    await note.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Note and its reviews deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ======================
+// Export Controllers
+// ======================
+module.exports = {
+  createNote,
+  getAllNotes,
+  getPublicNotes,
+  searchNotes,
+  getNoteById,
+  updateNote,
+  deleteNote,
+};
